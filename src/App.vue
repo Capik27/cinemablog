@@ -94,6 +94,18 @@ html {
 	}
 }
 
+.tooltip_hidden{
+	display: none;
+}
+
+.ant-pagination{
+	display: flex;
+}
+.ant-pagination-item, .ant-pagination-prev, .ant-pagination-jump-next, .ant-pagination-jump-prev {
+	margin-right: 2px;
+}
+
+
 @media(max-width: 400px) {
 	#content {
 		padding: 12px;

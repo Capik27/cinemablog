@@ -6,13 +6,13 @@
 			:placeholder="`${selectType} search`"
 		>
 			<template #suffix>
-				<a-tooltip :placement="isMobile ? 'left':'top'" v-if="likedFilter">
+				<a-tooltip placement="top" v-if="likedFilter">
 					<template #title>
 						<span>Like filter On</span>
 					</template>
 					<HeartFilled @click="toggleLike" class="search-group-box_liked" />
 				</a-tooltip>
-				<a-tooltip :placement="isMobile ? 'left':'top'" v-else>
+				<a-tooltip placement="top" v-else>
 					<template #title>
 						<span>Like filter Off</span>
 					</template>
@@ -29,7 +29,7 @@
 			<a-select-option value="author">author</a-select-option>
 		</a-select>
 
-		<a-tooltip placement="top">
+		<a-tooltip placement="top" :overlayClassName="hiddenClass">
 			<template #title>
 				<span>Time filter</span>
 			</template>
@@ -76,7 +76,10 @@ export default {
 	computed:{
 		isMobile(){
 			return isMobile() || window.innerWidth <= 400;
-		}
+		},
+		hiddenClass(){
+			return this.isMobile ? 'tooltip_hidden' : "";
+		},
 	},
 	methods: {
 		toggleLike() {

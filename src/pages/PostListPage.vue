@@ -65,9 +65,9 @@ export default {
 	},
 	data() {
 		return {
-			posts: null,
-			filtered: null,
-			timefiltered: null,
+			posts: this.$store.state.data.posts,
+			filtered: [],
+			timefiltered: [],
 			timeFilter: "all",
 			likes: null,
 			likedFilter: false,
@@ -77,12 +77,14 @@ export default {
 			pagList: null,
 		};
 	},
+	computed:{
+		isMobile(){
+			return isMobile();
+		}
+	},
 	methods: {
 		setFilteredPosts(value) {
 			this.filtered = value;
-		},
-		isMobile(){
-			return isMobile();
 		},
 		cardClick(e) {
 			if (e.target.class === "card_delete") return;
@@ -135,9 +137,9 @@ export default {
 			result = likedFiltered.filter((post) =>
 				post?.[selectType].toLowerCase().includes(value.toLowerCase())
 			);
-
 			this.setFilteredPosts(result);
 			this.pagListUpd();
+		
 		},
 		deleteCard(id) {
 			this.setFilteredPosts(this.filtered.filter((post) => post.id !== id));
@@ -146,17 +148,25 @@ export default {
 			this.pagListUpd();
 		},
 		pagListUpd() {
+			//проверка изменения номера страницы
+			if (this.filtered.length <= this.itemLimit) {
+				this.currentPage = 1;
+			} else {
+				const updatedPageIndex = Math.ceil(this.filtered.length / this.itemLimit);
+				if(this.currentPage > updatedPageIndex){
+					this.currentPage = updatedPageIndex
+				}
+			}
+			
 			this.pagList = this.filtered.filter(
 				(_, index) =>
 					index + 1 <= this.itemLimit * this.currentPage &&
 					index + 1 > this.itemLimit * this.currentPage - this.itemLimit
 			);
-			if (this.filtered.length <= this.itemLimit) {
-				this.currentPage = 1;
-			}
+			
 		},
 		updCardsNumber() {
-            if(!isMobile()){
+            if(!this.isMobile){
                 this.itemLimit = getVolumeOfCards();
                 //console.log('this.itemLimit',this.itemLimit);
             }
@@ -186,6 +196,7 @@ export default {
 				this.setFilteredPosts(res_posts);
 				this.timefiltered = res_posts;
 				this.posts = res_posts;
+				this.$store.dispatch('updatePosts',this.posts)
 				this.pagListUpd();
 				this.likes = res_likesObj;
 				// console.log("res post", res_posts);
@@ -325,16 +336,4 @@ $maxImageSize: 64px;
 }
 
 
-// @media(max-width: 567px) {
-// 	.card {
-// 		width: 100%;
-// 		max-width: 300px;
-// 		justify-self: center;
-// 	}
-
-// 	.input_gr {
-// 		margin-bottom: 0px;
-// 	}
-
-// }
 </style>

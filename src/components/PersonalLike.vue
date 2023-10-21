@@ -4,13 +4,13 @@
 			@click="toggleLike"
 			:class="likeId ? 'card_like-btn__liked' : 'card_like-btn__notliked'"
 		>
-			<a-tooltip placement="top" v-if="likeId">
+			<a-tooltip placement="top" v-if="likeId" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Liked</span>
 				</template>
 				<HeartFilled />
 			</a-tooltip>
-			<a-tooltip placement="top" v-else>
+			<a-tooltip placement="top" v-else :overlayClassName="hiddenClass"> 
 				<template #title>
 					<span>Not liked</span>
 				</template>
@@ -23,6 +23,7 @@
 <script>
 import { HeartFilled, HeartOutlined } from "@ant-design/icons-vue";
 import { downloadLikes, uploadLike, deleteLike } from "@/firebase/methods";
+import isMobile from "@/utils/isMobile";
 export default {
 	components: { HeartFilled, HeartOutlined },
 	props: {
@@ -41,6 +42,14 @@ export default {
 		return {
 			likeId: null,
 		};
+	},
+	computed:{
+		isMobile(){
+			return isMobile();
+		},
+		hiddenClass(){
+			return this.isMobile ? 'tooltip_hidden' : "";
+		},
 	},
 	methods: {
 		async updateLikeId(uid) {

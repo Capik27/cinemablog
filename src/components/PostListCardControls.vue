@@ -20,7 +20,7 @@
 			@confirm="handleConfirm"
 			@cancel="handleCancel"
 		>
-			<a-tooltip placement="top">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Delete</span>
 				</template>
@@ -38,6 +38,7 @@ import {
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import { deletePost } from "@/firebase/methods";
+import isMobile from "@/utils/isMobile";
 export default {
 	components: { EditOutlined, DeleteOutlined },
 	props: {
@@ -48,6 +49,14 @@ export default {
 		deleteCard: {
 			type: Function,
 			required: true,
+		},
+	},
+	computed:{
+		isMobile(){
+			return isMobile();
+		},
+		hiddenClass(){
+			return this.isMobile ? 'tooltip_hidden' : "";
 		},
 	},
 	methods: {

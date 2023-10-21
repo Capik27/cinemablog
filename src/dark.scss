@@ -74,6 +74,11 @@ $BG_CL: #ffffff05;
     }
 
     .ant-pagination {
+
+        & li .ant-pagination-item-ellipsis{
+            @extend %text_color;
+        }
+
         &-item {
             @extend %all;
 

@@ -33,7 +33,7 @@
 	</div>
 	<div class="navbar navbar_mob">
 		<div>
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Posts</span>
 				</template>
@@ -47,7 +47,7 @@
 				</a-button>
 			</a-tooltip>
 
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Theme</span>
 				</template>
@@ -56,7 +56,7 @@
 				></a-button>
 			</a-tooltip>
 
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Create post</span>
 				</template>
@@ -71,7 +71,7 @@
 		</div>
 
 		<div class="navbar__sign" v-if="!$store.state.auth.currentUser">
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Sign in</span>
 				</template>
@@ -83,7 +83,7 @@
 				></a-button>
 			</a-tooltip>
 
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Register</span>
 				</template>
@@ -98,7 +98,7 @@
 		<div class="navbar__sign" v-else>
 			<div class="navbar-nickname">
 				<strong>{{ $store.state.auth.currentUser.displayName }}</strong>
-				<a-tooltip placement="bottomRight">
+				<a-tooltip placement="bottomRight" >
 					<template #title>
 						<span>{{ $store.state.auth.currentUser.displayName }}</span>
 					</template>
@@ -108,7 +108,7 @@
 				</a-tooltip>
 			</div>
 
-			<a-tooltip placement="bottom">
+			<a-tooltip placement="bottom" :overlayClassName="hiddenClass">
 				<template #title>
 					<span>Logout</span>
 				</template>
@@ -131,6 +131,8 @@ import {
 	UserOutlined,
 	BgColorsOutlined,
 } from "@ant-design/icons-vue";
+import isMobile from "@/utils/isMobile";
+
 export default {
 	components: {
 		HomeFilled,
@@ -140,6 +142,14 @@ export default {
 		UserOutlined,
 		UserAddOutlined,
 		BgColorsOutlined,
+	},
+	computed:{
+		isMobile(){
+			return isMobile();
+		},
+		hiddenClass(){
+			return this.isMobile ? 'tooltip_hidden' : "";
+		},
 	},
 	methods: {
 		handleLogout() {

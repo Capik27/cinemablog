@@ -20,7 +20,8 @@ export default function getVolumeOfCards() {
   const preCardsW = Math.floor(currentWidth / cardMinWidth);
   const calcWidth = preCardsW * cardMinWidth + (preCardsW - 1) * cardGap;
 
-  const maxCardsW = calcWidth <= currentWidth ? preCardsW : preCardsW - 1;
+  const maxCardsW =
+    (calcWidth <= currentWidth ? preCardsW : preCardsW - 1) || 1;
   //console.log("calcWidth", calcWidth, "currentWidth", currentWidth);
   //console.log("maxCardsW", currentWidth / cardMinWidth, maxCardsW);
 
