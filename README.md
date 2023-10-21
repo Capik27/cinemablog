@@ -1,3 +1,3 @@
-# blog
+# Cinema blog
 
-https://capik27.github.io/blog/
+https://capik27.github.io/cinemablog/
