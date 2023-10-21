@@ -22,6 +22,7 @@
 					<span class="post_author">by {{ post.author }}</span>
 				</div>
 			</div>
+			<div class="card_badge_new" v-if="isNew(post.createdAt)">NEW</div>
 			<div class="card_options" :class="[{'card_options_show': isMobile}]" @click.stop>
 				<PersonalLike
 					:parentUpd="updLike"
@@ -80,11 +81,14 @@ export default {
 	computed:{
 		isMobile(){
 			return isMobile();
-		}
+		},
 	},
 	methods: {
 		setFilteredPosts(value) {
 			this.filtered = value;
+		},
+		isNew(createdAt){
+			return dateInRange(createdAt.toDate(), 'week')
 		},
 		cardClick(e) {
 			if (e.target.class === "card_delete") return;
@@ -192,7 +196,8 @@ export default {
 		const likesPromise = downloadLikesBase();
 		Promise.all([postsPromise, likesPromise])
 			.then((responses) => {
-				const [res_posts, res_likesObj] = responses;
+				let [res_posts, res_likesObj] = responses;
+				res_posts = res_posts.reverse();
 				this.setFilteredPosts(res_posts);
 				this.timefiltered = res_posts;
 				this.posts = res_posts;
@@ -237,10 +242,6 @@ $maxImageSize: 64px;
 	@media(max-width: 400px) {
 		padding-bottom: 12px;
 	}
-}
-.card_post {
-	display: flex;
-	height: 100%;
 }
 
 .input_gr {
@@ -298,6 +299,28 @@ $maxImageSize: 64px;
 	position: relative;
 	flex-grow: 1;
 	transition: all 0.33s;
+
+	&_post {
+		display: flex;
+		height: 100%;
+	}
+
+	&_badge_new {
+		font-size: 11px;
+		line-height: 12px;
+		position: absolute;
+		bottom: 2px;
+		right: 2px;
+		display: inline-block;
+		background-color: #f6ff00df;
+		border: 1px solid #796e61;
+		color: #000;
+		border-radius: 4px;
+		padding: 2px;
+		//width: 25px;
+		//height: 14px;
+		
+	}
 
 	&_options {
 		height: 14px;
