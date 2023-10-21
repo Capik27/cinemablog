@@ -22,7 +22,7 @@
 					<span class="post_author">by {{ post.author }}</span>
 				</div>
 			</div>
-			<div class="card_options" @click.stop>
+			<div class="card_options" :class="[{'card_options_show': isMobile}]" @click.stop>
 				<PersonalLike
 					:parentUpd="updLike"
 					:postId="post.id"
@@ -73,13 +73,16 @@ export default {
 			likedFilter: false,
 			//
 			currentPage: this.$store.state.pagination.page,
-			itemLimit: 24,
+			itemLimit: 50,
 			pagList: null,
 		};
 	},
 	methods: {
 		setFilteredPosts(value) {
 			this.filtered = value;
+		},
+		isMobile(){
+			return isMobile();
 		},
 		cardClick(e) {
 			if (e.target.class === "card_delete") return;
@@ -297,6 +300,11 @@ $maxImageSize: 64px;
 		top: 4px;
 		transition: all 0.33s;
 		opacity: 0;
+
+		&_show{
+			transition: all 0.33s;
+			opacity: 1;
+		}
 	}
 
 	&:hover {
