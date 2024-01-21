@@ -238,11 +238,9 @@ export default {
 				this.$store.dispatch('updatePosts',this.posts)
 				this.pagListUpd();
 
-
-				
-				console.log("res post", res_posts);
+				//console.log("res post", res_posts);
 				//console.log("res likes", res_likesObj);
-				console.log('comms',res_commentsObj)
+				//console.log('comms',res_commentsObj)
 				//console.log('visits',res_visitsObj)
 			})
 			.catch(() => {
