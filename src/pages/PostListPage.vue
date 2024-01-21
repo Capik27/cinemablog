@@ -1,11 +1,12 @@
 <template>
 	<div
 		class="posts-list"
-		v-if="posts && posts.length && likes && $store.state.auth.currentUser"
+		v-if="posts && posts.length && likes && comments && visits && $store.state.auth.currentUser"
 	>
 		<SearchForm :executor="searchHandler" class="input_gr" />
 		<a-card
 			class="card"
+			:class="{'card_updated': post.updated}"
 			hoverable
 			size="small"
 			v-for="post in pagList"
@@ -22,7 +23,7 @@
 					<span class="post_author">by {{ post.author }}</span>
 				</div>
 			</div>
-			<div class="card_badge_new" v-if="isNew(post.createdAt)">NEW</div>
+			<div class="card_badge_new" v-if="post.isNew">NEW</div>
 			<div class="card_options" :class="[{'card_options_show': isMobile}]" @click.stop>
 				<PersonalLike
 					:parentUpd="updLike"
@@ -53,7 +54,7 @@ import PostListCardControls from "@/components/PostListCardControls.vue";
 import PersonalLike from "@/components/PersonalLike.vue";
 import SearchForm from "@/components/SearchForm.vue";
 import dateInRange from "@/utils/dateInRange";
-import { downloadPosts, downloadLikesBase } from "@/firebase/methods";
+import { downloadPosts, downloadLikesBase, downloadCommentsBaseObj,downloadVisitsBase } from "@/firebase/methods";
 import { PATH_POSTS } from "@/firebase/constants";
 import isMobile from "@/utils/isMobile";
 import getVolumeOfCards from "@/utils/getVolumeOfCards";
@@ -72,6 +73,8 @@ export default {
 			timeFilter: "all",
 			likes: null,
 			likedFilter: false,
+			comments: null,
+			visits: null,
 			//
 			currentPage: this.$store.state.pagination.page,
 			itemLimit: 50,
@@ -87,15 +90,35 @@ export default {
 		setFilteredPosts(value) {
 			this.filtered = value;
 		},
-		isNew(createdAt){
-			return dateInRange(createdAt.toDate(), 'week')
-		},
 		cardClick(e) {
 			if (e.target.class === "card_delete") return;
 			const parent = e.target.closest(".card");
 			const id = parent.dataset.id;
 			this.$router.push({ name: PATH_POSTS, params: { id } });
 		},
+		isNew(post){
+			//return dateInRange(createdAt.toDate(), 'week')
+			if(post.uid === this.$store.state.auth.currentUser.uid) return;
+			return !this.visits[post.id]?.[this.$store.state.auth.currentUser.uid]?.createdAt
+		},
+		checkPostChanges(post){
+			const changedAt = post?.changedAt?.toDate();
+			const lastVisit = this.visits[post.id]?.[this.$store.state.auth.currentUser.uid]?.createdAt?.toDate();
+			const postComments = Object.entries(this.comments[post.id] ?? []).sort((a,b)=> a[1].createdAt.toDate() - b[1].createdAt.toDate())
+			const lastCommentDate = postComments[postComments.length-1]?.[1]?.createdAt?.toDate();
+	
+			if(postComments.length && lastCommentDate > lastVisit){
+				//console.log('новый комментарий')
+				return true
+			}
+			if((!lastVisit || (changedAt && changedAt > lastVisit)) && post.uid !== this.$store.state.auth.currentUser.uid){
+				//console.log('нет просмотра или содержание поста обновлено')
+				return true
+			}
+			
+			return false
+		},
+
 
 		updLike(postId) {
 			const uid = this.$store.state.auth.currentUser.uid;
@@ -194,18 +217,33 @@ export default {
 	created() {
 		const postsPromise = downloadPosts();
 		const likesPromise = downloadLikesBase();
-		Promise.all([postsPromise, likesPromise])
+		const commsPromise = downloadCommentsBaseObj();//downloadCommentsBase();
+		const visitPromise = downloadVisitsBase();
+		Promise.all([postsPromise, likesPromise, commsPromise, visitPromise])
 			.then((responses) => {
-				let [res_posts, res_likesObj] = responses;
+				let [res_posts, res_likesObj, res_commentsObj, res_visitsObj] = responses;
+				this.likes = res_likesObj;
+				this.comments = res_commentsObj;
+				this.visits = res_visitsObj;
+
+				res_posts.forEach(post=>{
+					post.updated = this.checkPostChanges(post);
+					post.isNew = this.isNew(post);
+				})
 				res_posts = res_posts.reverse();
+				
 				this.setFilteredPosts(res_posts);
 				this.timefiltered = res_posts;
 				this.posts = res_posts;
 				this.$store.dispatch('updatePosts',this.posts)
 				this.pagListUpd();
-				this.likes = res_likesObj;
-				// console.log("res post", res_posts);
-				// console.log("res likes", res_likesObj);
+
+
+				
+				console.log("res post", res_posts);
+				//console.log("res likes", res_likesObj);
+				console.log('comms',res_commentsObj)
+				//console.log('visits',res_visitsObj)
 			})
 			.catch(() => {
 				// Обработка ошибки
@@ -225,6 +263,7 @@ export default {
 
 <style lang="scss" scoped>
 $maxImageSize: 64px;
+$bg_color: #fffbfb;
 .loading {
 	margin-top: 55px;
 }
@@ -292,13 +331,17 @@ $maxImageSize: 64px;
 }
 
 .card {
-	background-color: #fffbfb;
+	background-color: $bg_color;
 	border: 1px solid hsl(0, 0%, 90%);
 	border-radius: 2px;
 	overflow: hidden;
 	position: relative;
 	flex-grow: 1;
 	transition: all 0.33s;
+
+	&_updated {
+		animation: flashing 3s ease infinite;
+	}
 
 	&_post {
 		display: flex;
@@ -356,6 +399,21 @@ $maxImageSize: 64px;
 .card_deleting_animation {
 	transition: all 0.33s;
 	transform: scale(0);
+}
+
+@keyframes flashing {
+	from {
+		opacity: 1;
+		background-color: initial;
+	}
+	50%{
+		opacity: 0.75;
+		background-color: rgba(255, 255, 0, 0.193);
+	}
+	to {
+		opacity: 1;
+		background-color: initial;
+	}
 }
 
 

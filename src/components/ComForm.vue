@@ -21,7 +21,7 @@
 
 <script>
 import { defineComponent, ref } from "vue";
-import { uploadComment } from "@/firebase/methods";
+import { uploadComment,updateVisit } from "@/firebase/methods";
 
 export default defineComponent({
 	props: {
@@ -64,6 +64,7 @@ export default defineComponent({
 				this.value = "";
 				await this.upd();
 				this.focusInput();
+				updateVisit(this.id, uid);
 			});
 		},
 	},

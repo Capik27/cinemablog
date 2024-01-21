@@ -62,6 +62,7 @@ import {
 	uploadLike,
 	deleteLike,
 	deletePost,
+	updateVisit,
 } from "@/firebase/methods";
 import D2S from "@/utils/D2S";
 export default {
@@ -120,6 +121,7 @@ export default {
 		},
 		update() {
 			const id = this.$route.params.id;
+			updateVisit(id, this.$store.state.auth.currentUser.uid)
 			downloadPost(id).then((post) => {
 				this.setPost(post);
 				this.updateLikes();

@@ -1,53 +1,58 @@
 import { createID } from "@/utils/createID";
 import datasort from "@/utils/datasort";
 import store from "@/store";
-import { PATH_COMMENTS, PATH_POSTS, PATH_LIKES } from "@/firebase/constants";
+import {
+    PATH_COMMENTS,
+    PATH_POSTS,
+    PATH_LIKES,
+    PATH_VISITS,
+} from "@/firebase/constants";
 const { storage, firestore, auth } = store.state;
 
 import {
-	serverTimestamp,
-	deleteDoc,
-	setDoc,
-	doc,
-	collection,
-	getDoc,
-	getDocs,
-	deleteField,
+    serverTimestamp,
+    deleteDoc,
+    setDoc,
+    doc,
+    collection,
+    getDoc,
+    getDocs,
+    deleteField,
 } from "firebase/firestore";
 
 import {
-	ref,
-	uploadBytes,
-	getDownloadURL,
-	deleteObject,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    deleteObject,
 } from "firebase/storage";
 
 import {
-	getAuth,
-	signInWithEmailAndPassword,
-	createUserWithEmailAndPassword,
-	signInWithPopup,
-	GoogleAuthProvider,
-	updateProfile,
-	signOut,
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    updateProfile,
+    signOut,
 } from "firebase/auth";
 
 ///////////////////////////////////////////////////////////////////////////
 // LOGIN  /  LOGOUT
 ///////////////////////////////////////////////////////////////////////////
 export async function logoutAcc(a = auth) {
-	return signOut(a);
+    return signOut(a);
 }
 
 export async function loginGoogle() {
-	const provider = new GoogleAuthProvider();
-	const userData = await signInWithPopup(auth, provider);
-	GoogleAuthProvider.credentialFromResult(userData);
-	return userData;
+    const provider = new GoogleAuthProvider();
+    const userData = await signInWithPopup(auth, provider);
+    GoogleAuthProvider.credentialFromResult(userData);
+    return userData;
 }
 
 export function loginDefault(email, pass) {
-	return signInWithEmailAndPassword(auth, email, pass);
+    return signInWithEmailAndPassword(auth, email, pass);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -55,14 +60,14 @@ export function loginDefault(email, pass) {
 ///////////////////////////////////////////////////////////////////////////
 
 export async function registerAuth(name, email, pass) {
-	const auth = getAuth();
-	await createUserWithEmailAndPassword(auth, email, pass);
-	await updateProfile(auth.currentUser, {
-		displayName: name,
-	});
-	signOut(auth);
+    const auth = getAuth();
+    await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(auth.currentUser, {
+        displayName: name,
+    });
+    signOut(auth);
 
-	return loginDefault(email, pass);
+    return loginDefault(email, pass);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -70,22 +75,27 @@ export async function registerAuth(name, email, pass) {
 ///////////////////////////////////////////////////////////////////////////
 
 export async function changePost(post, title, body, preview) {
-	let previewURL = post.previewURL;
-	if (typeof preview != "string") {
-		await deletePostPreview(`${post.id}/${post.previewName}`);
-		previewURL = await uploadPreview(preview, post.id);
-	}
+    let previewURL = post.previewURL;
+    if (typeof preview != "string") {
+        await deletePostPreview(`${post.id}/${post.previewName}`);
+        previewURL = await uploadPreview(preview, post.id);
+    }
 
-	const changedPost = {
-		...post,
-		title,
-		body,
-		previewURL,
-		previewName: preview.name || post.previewName,
-		changedAt: serverTimestamp(),
-	};
-	const docRef = doc(collection(firestore, PATH_POSTS), post.id);
-	return await setDoc(docRef, changedPost, { merge: true });
+    const changedPost = {
+        ...post,
+        title,
+        body,
+        previewURL,
+        previewName: preview.name || post.previewName,
+        changedAt: serverTimestamp(),
+    };
+    const docRef = doc(collection(firestore, PATH_POSTS), post.id);
+    return await setDoc(docRef, changedPost, { merge: true });
+}
+
+export async function updateVisit(postId, uid) {
+    await deleteVisit(postId, uid);
+    await uploadVisit(postId, uid);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -93,57 +103,69 @@ export async function changePost(post, title, body, preview) {
 ///////////////////////////////////////////////////////////////////////////
 
 export async function uploadPost(uid, author, title, body, preview) {
-	const id = createID();
-	const previewURL = await uploadPreview(preview, id);
-	const newPost = {
-		id,
-		uid,
-		author,
-		title,
-		body,
-		previewURL,
-		previewName: preview.name,
-		createdAt: serverTimestamp(),
-	};
-	const docRef = doc(collection(firestore, PATH_POSTS), id);
-	return await setDoc(docRef, newPost, { merge: true });
+    const id = createID();
+    const previewURL = await uploadPreview(preview, id);
+    const newPost = {
+        id,
+        uid,
+        author,
+        title,
+        body,
+        previewURL,
+        previewName: preview.name,
+        createdAt: serverTimestamp(),
+    };
+    const docRef = doc(collection(firestore, PATH_POSTS), id);
+    return await setDoc(docRef, newPost, { merge: true });
 }
 
 export async function uploadComment(postId, uid, name, value) {
-	const id = createID();
-	const newComment = {
-		id,
-		uid,
-		name,
-		value,
-		createdAt: serverTimestamp(),
-	};
-	const db = {
-		[id]: newComment,
-	};
-	const docRef = doc(collection(firestore, PATH_COMMENTS), postId);
-	return setDoc(docRef, db, { merge: true });
+    const id = createID();
+    const newComment = {
+        id,
+        uid,
+        name,
+        value,
+        createdAt: serverTimestamp(),
+    };
+    const db = {
+        [id]: newComment,
+    };
+    const docRef = doc(collection(firestore, PATH_COMMENTS), postId);
+    return setDoc(docRef, db, { merge: true });
 }
 
 export async function uploadLike(postId, uid) {
-	const id = createID();
-	const newLike = {
-		id,
-		uid,
-		createdAt: serverTimestamp(),
-	};
-	const db = {
-		[uid]: newLike,
-	};
-	const docRef = doc(collection(firestore, PATH_LIKES), postId);
-	return setDoc(docRef, db, { merge: true });
+    const id = createID();
+    const newLike = {
+        id,
+        uid,
+        createdAt: serverTimestamp(),
+    };
+    const db = {
+        [uid]: newLike,
+    };
+    const docRef = doc(collection(firestore, PATH_LIKES), postId);
+    return setDoc(docRef, db, { merge: true });
+}
+
+export async function uploadVisit(postId, uid) {
+    const newVisit = {
+        uid,
+        createdAt: serverTimestamp(),
+    };
+    const db = {
+        [uid]: newVisit,
+    };
+    const docRef = doc(collection(firestore, PATH_VISITS), postId);
+    return setDoc(docRef, db, { merge: true });
 }
 
 async function uploadPreview(preview, id) {
-	const path = `${id}/${preview.name}`;
-	const storageRef = ref(storage, path);
-	await uploadBytes(storageRef, preview);
-	return await getDownloadURL(storageRef);
+    const path = `${id}/${preview.name}`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, preview);
+    return await getDownloadURL(storageRef);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -153,76 +175,95 @@ async function uploadPreview(preview, id) {
 /////////////// PRIVATE
 
 async function downloadDocs(path) {
-	const docCollection = collection(firestore, path);
-	const queryDocs = await getDocs(docCollection);
-	const result = [];
-	if (queryDocs.empty) return result;
-	queryDocs.forEach(async (doc) => {
-		const data = doc.data();
-		result.push(data);
-	});
-	return result;
+    const docCollection = collection(firestore, path);
+    const queryDocs = await getDocs(docCollection);
+    const result = [];
+    if (queryDocs.empty) return result;
+    queryDocs.forEach(async (doc) => {
+        const data = doc.data();
+        result.push(data);
+    });
+    return result;
 }
 
-async function downloadLikesObj(path) {
-	const docCollection = collection(firestore, path);
-	const queryDocs = await getDocs(docCollection);
-	const result = {};
-	if (queryDocs.empty) return result;
-	queryDocs.forEach(async (doc) => {
-		const data = doc.data();
-		result[doc.id] = data;
-	});
-	return result;
+async function downloadBaseObj(path) {
+    const docCollection = collection(firestore, path);
+    const queryDocs = await getDocs(docCollection);
+    const result = {};
+    if (queryDocs.empty) return result;
+    queryDocs.forEach(async (doc) => {
+        const data = doc.data();
+        result[doc.id] = data;
+    });
+    return result;
 }
 
 async function downloadDoc(id, path) {
-	const docRef = doc(firestore, path, id);
-	const docSnap = await getDoc(docRef);
-	if (docSnap.exists()) {
-		return docSnap.data();
-	} else {
-		return [];
-		// throw new Error("no such doc!");
-	}
+    const docRef = doc(firestore, path, id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data();
+    } else {
+        return [];
+        // throw new Error("no such doc!");
+    }
 }
 
 /////////////// PUBLIC
 
 // comments
 
+export function downloadCommentsBase() {
+    return downloadDocs(PATH_COMMENTS);
+}
+
+export function downloadCommentsBaseObj() {
+    return downloadBaseObj(PATH_COMMENTS);
+}
+
 export async function downloadComments(id) {
-	const comments = await downloadDoc(id, PATH_COMMENTS);
-	const result = [];
-	for (const key in comments) {
-		result.push(comments[key]);
-	}
-	result.sort(datasort);
-	return result;
+    const comments = await downloadDoc(id, PATH_COMMENTS);
+    const result = [];
+    for (const key in comments) {
+        result.push(comments[key]);
+    }
+    result.sort(datasort);
+    return result;
 }
 
 // likes
 
 export function downloadLikesBase() {
-	return downloadLikesObj(PATH_LIKES);
+    return downloadBaseObj(PATH_LIKES);
 }
 
 export async function downloadLikes(id) {
-	const likes = await downloadDoc(id, PATH_LIKES);
-	const result = {};
-	for (const key in likes) {
-		result[key] = likes[key];
-	}
-	return result;
+    const likes = await downloadDoc(id, PATH_LIKES);
+    const result = {};
+    for (const key in likes) {
+        result[key] = likes[key];
+    }
+    return result;
 }
 
 // posts
 
 export function downloadPosts() {
-	return downloadDocs(PATH_POSTS);
+    return downloadDocs(PATH_POSTS);
 }
 export function downloadPost(id) {
-	return downloadDoc(id, PATH_POSTS);
+    return downloadDoc(id, PATH_POSTS);
+}
+
+// visits
+
+export function downloadVisitsBase() {
+    return downloadBaseObj(PATH_VISITS);
+}
+
+export async function downloadVisit(postId, uid) {
+    const visits = await downloadDoc(postId, PATH_VISITS);
+    return visits[uid];
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -232,36 +273,47 @@ export function downloadPost(id) {
 /////////////// PRIVATE
 
 async function deletePostPreview(path) {
-	const previewRef = ref(storage, path);
-	await deleteObject(previewRef);
+    const previewRef = ref(storage, path);
+    await deleteObject(previewRef);
 }
 
 /////////////// PUBLIC
 
 // post
 export async function deletePost(id, previewName) {
-	await deletePostPreview(`${id}/${previewName}`);
-	await deleteDoc(doc(firestore, PATH_POSTS, id));
-	await deleteDoc(doc(firestore, PATH_COMMENTS, id));
-	await deleteDoc(doc(firestore, PATH_LIKES, id));
+    await deletePostPreview(`${id}/${previewName}`);
+    await deleteDoc(doc(firestore, PATH_POSTS, id));
+    await deleteDoc(doc(firestore, PATH_COMMENTS, id));
+    await deleteDoc(doc(firestore, PATH_LIKES, id));
+    await deleteDoc(doc(firestore, PATH_VISITS, id));
 }
 
 // comment
 
 export async function deleteComment(id, postId) {
-	const docRef = doc(firestore, PATH_COMMENTS, postId);
-	const db = {
-		[id]: deleteField(),
-	};
-	return setDoc(docRef, db, { merge: true });
+    const docRef = doc(firestore, PATH_COMMENTS, postId);
+    const db = {
+        [id]: deleteField(),
+    };
+    return setDoc(docRef, db, { merge: true });
 }
 
 // like
 
 export async function deleteLike(uid, postId) {
-	const docRef = doc(firestore, PATH_LIKES, postId);
-	const db = {
-		[uid]: deleteField(),
-	};
-	return setDoc(docRef, db, { merge: true });
+    const docRef = doc(firestore, PATH_LIKES, postId);
+    const db = {
+        [uid]: deleteField(),
+    };
+    return setDoc(docRef, db, { merge: true });
+}
+
+// visit
+
+export async function deleteVisit(postId, uid) {
+    const docRef = doc(firestore, PATH_VISITS, postId);
+    const db = {
+        [uid]: deleteField(),
+    };
+    return setDoc(docRef, db, { merge: true });
 }
